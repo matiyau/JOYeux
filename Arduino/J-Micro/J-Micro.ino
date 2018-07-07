@@ -17,6 +17,9 @@ uint8_t KEY_V_IN[] = {V0,V1,V2,V3};
 //Array Of Key Map
 char KEY_MAP[][4] = {{'1', '2', '3', 'A'}, {'4', '5', '6', 'B'}, {'7', '8', '9', 'C'}, {'*', '0', '#', 'D'}};
 
+bool KEY_PRESSED_NOW = false;
+bool KEY_PRESSED_PREV = false;
+
 void setup() {
   Serial.begin(9600);
   
@@ -38,8 +41,13 @@ void loop() {
     digitalWrite(KEY_H_OUT[i], LOW);
     for (int j = 0; j<4; j++) {
       if (!digitalRead(KEY_V_IN[j])) {
-        Serial.println(KEY_MAP[i][j]);
+        KEY_PRESSED_NOW = true;
+        if (!KEY_PRESSED_PREV) {
+          Serial.println(KEY_MAP[i][j]);
+        }
       }
     }
   }
+  KEY_PRESSED_PREV = KEY_PRESSED_NOW;
+  KEY_PRESSED_NOW = false;
 }
