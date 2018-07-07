@@ -23,8 +23,11 @@ uint8_t KEY_H_OUT[] = {KEY_H0,KEY_H1,KEY_H2,KEY_H3};
 //Array Of Pins Reading State Of Key Matrix
 uint8_t KEY_V_IN[] = {KEY_V0,KEY_V1,KEY_V2,KEY_V3};
 
-//Array Of Key Map
-char KEY_MAP[][4] = {{'1', '2', '3', 'A'}, {'4', '5', '6', 'B'}, {'7', '8', '9', 'C'}, {'*', '0', '#', 'D'}};
+//Array Of Key Lower Functionalities
+char KEY_MAP0[][4] = {{'1', '2', '3', 'a'}, {'4', '5', '6', 'b'}, {'7', '8', '9', 'c'}, {'-', '0', '=', 'd'}};
+
+//Array Of Key Upper Functionalities
+char KEY_MAP1[][4] = {{'!', '@', '#', 'A'}, {'$', '%', '^', 'B'}, {'&', '*', '(', 'C'}, {'_', ')', '+', 'D'}};
 
 bool KEY_PRESSED_NOW = false;
 bool KEY_PRESSED_PREV = false;
@@ -39,6 +42,7 @@ bool BUT_SY_PRESSED_NOW = false;
 bool BUT_SY_PRESSED_PREV = false;
 bool BUT_SL_PRESSED_NOW = false;
 bool BUT_SL_PRESSED_PREV = false;
+bool BUT_ST_PRESSED = false;
 
 int16_t MOUSE_X = 0;
 int16_t MOUSE_Y = 0;
@@ -68,8 +72,9 @@ void setup() {
   pinMode(BUT_SHFT, INPUT_PULLUP);
 }
 
-void loop() {  
-  // put your main code here, to run repeatedly:
+void loop() { 
+  BUT_ST_PRESSED = !digitalRead(BUT_SHFT);
+   
   for (int i = 0; i<4; i++) {
     for (int j = 0; j<4; j++) {
        digitalWrite(KEY_H_OUT[j], HIGH);
@@ -79,7 +84,12 @@ void loop() {
       if (!digitalRead(KEY_V_IN[j])) {
         KEY_PRESSED_NOW = true;
         if (!KEY_PRESSED_PREV) {
-          Serial.println(KEY_MAP[i][j]);
+          if (BUT_ST_PRESSED) {
+            Serial.println(KEY_MAP1[i][j]);
+          }
+          else {
+            Serial.println(KEY_MAP0[i][j]);
+          }
         }
       }
     }
