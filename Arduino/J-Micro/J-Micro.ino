@@ -12,6 +12,11 @@
 #define JOY_Y A1
 #define JOY_SW A0
 
+#define BUT_PRIM 2
+#define BUT_SECN 3
+#define BUT_SCRL 5
+#define BUT_SHFT 4
+
 //Array Of Pins Giving Supply To Key Matrix
 uint8_t KEY_H_OUT[] = {KEY_H0,KEY_H1,KEY_H2,KEY_H3};
 
@@ -23,9 +28,17 @@ char KEY_MAP[][4] = {{'1', '2', '3', 'A'}, {'4', '5', '6', 'B'}, {'7', '8', '9',
 
 bool KEY_PRESSED_NOW = false;
 bool KEY_PRESSED_PREV = false;
+
 bool JOY_PRESSED_NOW = false;
 bool JOY_PRESSED_PREV = false;
 bool JOY_SCR = false;
+
+bool BUT_PY_PRESSED_NOW = false;
+bool BUT_PY_PRESSED_PREV = false;
+bool BUT_SY_PRESSED_NOW = false;
+bool BUT_SY_PRESSED_PREV = false;
+bool BUT_SL_PRESSED_NOW = false;
+bool BUT_SL_PRESSED_PREV = false;
 
 int16_t MOUSE_X = 0;
 int16_t MOUSE_Y = 0;
@@ -46,7 +59,13 @@ void setup() {
   //Pin Config For JoyStick
   pinMode(JOY_X, INPUT);
   pinMode(JOY_Y, INPUT);
-  pinMode(JOY_SW, INPUT_PULLUP);  
+  pinMode(JOY_SW, INPUT_PULLUP);
+
+  //Pin Configuration For Push Buttons
+  pinMode(BUT_PRIM, INPUT_PULLUP);
+  pinMode(BUT_SECN, INPUT_PULLUP);
+  pinMode(BUT_SCRL, INPUT_PULLUP);
+  pinMode(BUT_SHFT, INPUT_PULLUP);
 }
 
 void loop() {  
@@ -68,6 +87,39 @@ void loop() {
   KEY_PRESSED_PREV = KEY_PRESSED_NOW;
   KEY_PRESSED_NOW = false;
 
+  BUT_PY_PRESSED_NOW = !digitalRead(BUT_PRIM);
+  if (BUT_PY_PRESSED_PREV != BUT_PY_PRESSED_NOW) {
+    if (BUT_PY_PRESSED_NOW) {
+      Serial.println("PY DN");
+    }
+    else {
+      Serial.println("PY UP");
+    }
+  }
+  BUT_PY_PRESSED_PREV = BUT_PY_PRESSED_NOW;
+
+  BUT_SY_PRESSED_NOW = !digitalRead(BUT_SECN);
+  if (BUT_SY_PRESSED_PREV != BUT_SY_PRESSED_NOW) {
+    if (BUT_SY_PRESSED_NOW) {
+      Serial.println("SY DN");
+    }
+    else {
+      Serial.println("SY UP");
+    }
+  }
+  BUT_SY_PRESSED_PREV = BUT_SY_PRESSED_NOW;
+  
+  BUT_SL_PRESSED_NOW = !digitalRead(BUT_SCRL);
+  if (BUT_SL_PRESSED_PREV != BUT_SL_PRESSED_NOW) {
+    if (BUT_SL_PRESSED_NOW) {
+      Serial.println("SL DN");
+    }
+    else {
+      Serial.println("SL UP");
+    }
+  }
+  BUT_SL_PRESSED_PREV = BUT_SL_PRESSED_NOW;
+  
   JOY_PRESSED_NOW = !digitalRead(JOY_SW);
   if (!JOY_PRESSED_PREV) {
     if (JOY_PRESSED_NOW) {
