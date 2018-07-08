@@ -102,14 +102,17 @@ void loop() {
         KEY_PRESSED_NOW = true;
         if (!KEY_PRESSED_PREV) {
           if (BUT_ST_PRESSED) {
-            Serial.println(KEY_MAP1[i][j]);
+            Keyboard.press(KEY_MAP1[i][j]);
           }
           else {
-            Serial.println(KEY_MAP0[i][j]);
+            Keyboard.press(KEY_MAP0[i][j]);
           }
         }
       }
     }
+  }
+  if (!KEY_PRESSED_NOW && KEY_PRESSED_PREV) {
+    Keyboard.releaseAll();
   }
   KEY_PRESSED_PREV = KEY_PRESSED_NOW;
   KEY_PRESSED_NOW = false;
