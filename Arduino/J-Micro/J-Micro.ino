@@ -17,6 +17,9 @@
 #define BUT_SCRL 5
 #define BUT_SHFT 4
 
+#define MOUSE_SNST 0.2
+#define MOUSE_WH_SNST 0.002
+
 #include<Mouse.h>
 #include<Keyboard.h>
 
@@ -53,6 +56,7 @@ int16_t MOUSE_WH = 0;
 
 int16_t JOY_X_0 = 512;
 int16_t JOY_Y_0 = 512;
+unsigned long JOY_RESPOND = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -154,21 +158,25 @@ void loop() {
   if (JOY_SCR) {
     MOUSE_X = 0;
     MOUSE_Y = 0;
-    MOUSE_WH = analogRead(JOY_Y)-512;
+    MOUSE_WH = MOUSE_WH_SNST * analogRead(JOY_Y)-512;
   }
   else {
     MOUSE_X = analogRead(JOY_X)-JOY_X_0;
     MOUSE_Y = analogRead(JOY_Y)-JOY_Y_0;
     MOUSE_WH = 0;    
   }
-  if (!(MOUSE_X<10 && MOUSE_X>-10 && MOUSE_Y<10 && MOUSE_Y>-10 && MOUSE_WH<10 && MOUSE_WH>-10)) {
-    Serial.print("X : ");
-    Serial.print(MOUSE_X);
-    Serial.print(", ");
-    Serial.print("Y : ");
-    Serial.print(MOUSE_Y);
-    Serial.print(", ");
-    Serial.print("WH : ");
-    Serial.println(MOUSE_WH); 
+  if (!(MOUSE_X<10 && MOUSE_X>-5 && MOUSE_Y<5 && MOUSE_Y>-5 && MOUSE_WH<5 && MOUSE_WH>-5)) {
+    if (millis() - JOY_RESPOND > 50) {
+      /*Serial.print("X : ");
+      Serial.print(MOUSE_SNST * MOUSE_X);
+      Serial.print(", ");
+      Serial.print("Y : ");
+      Serial.print(MOUSE_SNST * MOUSE_Y);
+      Serial.print(", ");
+      Serial.print("WH : ");
+      Serial.println(MOUSE_WH_SNST * MOUSE_WH);*/
+      Mouse.move(MOUSE_SNST * MOUSE_X, MOUSE_SNST * MOUSE_Y, MOUSE_WH_SNST * MOUSE_WH);
+      JOY_RESPOND = millis();
+    }
   }
 }
