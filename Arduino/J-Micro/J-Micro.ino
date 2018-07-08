@@ -17,7 +17,7 @@
 #define BUT_SCRL 5
 #define BUT_SHFT 4
 
-#define MOUSE_SNST 0.2
+#define MOUSE_SNST 0.25
 #define MOUSE_WH_SNST 0.002
 
 #include<Mouse.h>
@@ -165,17 +165,38 @@ void loop() {
     MOUSE_Y = analogRead(JOY_Y)-JOY_Y_0;
     MOUSE_WH = 0;    
   }
-  if (!(MOUSE_X<10 && MOUSE_X>-5 && MOUSE_Y<5 && MOUSE_Y>-5 && MOUSE_WH<5 && MOUSE_WH>-5)) {
-    if (millis() - JOY_RESPOND > 50) {
-      /*Serial.print("X : ");
-      Serial.print(MOUSE_SNST * MOUSE_X);
+  if (!(MOUSE_X<2 && MOUSE_X>-2 && MOUSE_Y<2 && MOUSE_Y>-2 && MOUSE_WH<2 && MOUSE_WH>-2)) {
+    if (millis() - JOY_RESPOND > 100) {
+      if (MOUSE_X > 0) {
+        MOUSE_X = constrain(MOUSE_SNST * MOUSE_X, 1, 120);
+      }
+      else if (MOUSE_X < 0){
+        MOUSE_X = constrain(MOUSE_SNST * MOUSE_X, -120, -1);
+      }
+
+      if (MOUSE_Y > 0) {
+        MOUSE_Y = constrain(MOUSE_SNST * MOUSE_Y, 1, 120);
+      }
+      else if (MOUSE_Y < 0) {
+        MOUSE_Y = constrain(MOUSE_SNST * MOUSE_Y, -120, -1);
+      }
+
+      if (MOUSE_WH > 0) {
+        MOUSE_WH = constrain(MOUSE_WH_SNST * MOUSE_WH, 1, 120);
+      }
+      else if (MOUSE_WH < 0){
+        MOUSE_WH = constrain(MOUSE_WH_SNST * MOUSE_WH, -120, -1);
+      }
+      Serial.print("X : ");
+      Serial.print(MOUSE_X);
       Serial.print(", ");
       Serial.print("Y : ");
-      Serial.print(MOUSE_SNST * MOUSE_Y);
+      Serial.print(MOUSE_Y);
       Serial.print(", ");
       Serial.print("WH : ");
-      Serial.println(MOUSE_WH_SNST * MOUSE_WH);*/
-      Mouse.move(MOUSE_SNST * MOUSE_X, MOUSE_SNST * MOUSE_Y, MOUSE_WH_SNST * MOUSE_WH);
+      Serial.println(MOUSE_WH);
+      
+      Mouse.move(MOUSE_X, MOUSE_Y, MOUSE_WH);
       JOY_RESPOND = millis();
     }
   }
