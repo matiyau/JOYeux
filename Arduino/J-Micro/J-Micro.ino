@@ -17,6 +17,9 @@
 #define BUT_SCRL 5
 #define BUT_SHFT 4
 
+#include<Mouse.h>
+#include<Keyboard.h>
+
 //Array Of Pins Giving Supply To Key Matrix
 uint8_t KEY_H_OUT[] = {KEY_H0,KEY_H1,KEY_H2,KEY_H3};
 
@@ -77,6 +80,9 @@ void setup() {
   //Calibrate JoyStick
   JOY_X_0 = analogRead(JOY_X);
   JOY_Y_0 = analogRead(JOY_Y);
+
+  Mouse.begin();
+  Keyboard.begin();
 }
 
 void loop() { 
@@ -107,10 +113,10 @@ void loop() {
   BUT_PY_PRESSED_NOW = !digitalRead(BUT_PRIM);
   if (BUT_PY_PRESSED_PREV != BUT_PY_PRESSED_NOW) {
     if (BUT_PY_PRESSED_NOW) {
-      Serial.println("PY DN");
+      Mouse.press(MOUSE_LEFT);
     }
     else {
-      Serial.println("PY UP");
+      Mouse.release(MOUSE_LEFT);
     }
   }
   BUT_PY_PRESSED_PREV = BUT_PY_PRESSED_NOW;
@@ -118,10 +124,10 @@ void loop() {
   BUT_SY_PRESSED_NOW = !digitalRead(BUT_SECN);
   if (BUT_SY_PRESSED_PREV != BUT_SY_PRESSED_NOW) {
     if (BUT_SY_PRESSED_NOW) {
-      Serial.println("SY DN");
+      Mouse.press(MOUSE_RIGHT);
     }
     else {
-      Serial.println("SY UP");
+      Mouse.release(MOUSE_RIGHT);
     }
   }
   BUT_SY_PRESSED_PREV = BUT_SY_PRESSED_NOW;
@@ -129,10 +135,10 @@ void loop() {
   BUT_SL_PRESSED_NOW = !digitalRead(BUT_SCRL);
   if (BUT_SL_PRESSED_PREV != BUT_SL_PRESSED_NOW) {
     if (BUT_SL_PRESSED_NOW) {
-      Serial.println("SL DN");
+      Mouse.press(MOUSE_MIDDLE);
     }
     else {
-      Serial.println("SL UP");
+      Mouse.release(MOUSE_MIDDLE);
     }
   }
   BUT_SL_PRESSED_PREV = BUT_SL_PRESSED_NOW;
