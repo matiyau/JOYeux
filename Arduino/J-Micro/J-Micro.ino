@@ -48,6 +48,9 @@ int16_t MOUSE_X = 0;
 int16_t MOUSE_Y = 0;
 int16_t MOUSE_WH = 0;
 
+int16_t JOY_X_0 = 512;
+int16_t JOY_Y_0 = 512;
+
 void setup() {
   Serial.begin(9600);
 
@@ -70,6 +73,10 @@ void setup() {
   pinMode(BUT_SECN, INPUT_PULLUP);
   pinMode(BUT_SCRL, INPUT_PULLUP);
   pinMode(BUT_SHFT, INPUT_PULLUP);
+
+  //Calibrate JoyStick
+  JOY_X_0 = digitalRead(JOY_X);
+  JOY_Y_0 = digitalRead(JOY_Y);
 }
 
 void loop() { 
@@ -144,8 +151,8 @@ void loop() {
     MOUSE_WH = analogRead(JOY_Y)-512;
   }
   else {
-    MOUSE_X = analogRead(JOY_X)-512;
-    MOUSE_Y = analogRead(JOY_Y)-512;
+    MOUSE_X = analogRead(JOY_X)-JOY_X_0;
+    MOUSE_Y = analogRead(JOY_Y)-JOY_Y_0;
     MOUSE_WH = 0;    
   }
   if (!(MOUSE_X<10 && MOUSE_X>-10 && MOUSE_Y<10 && MOUSE_Y>-10 && MOUSE_WH<10 && MOUSE_WH>-10)) {
