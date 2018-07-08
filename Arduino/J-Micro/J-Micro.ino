@@ -75,8 +75,8 @@ void setup() {
   pinMode(BUT_SHFT, INPUT_PULLUP);
 
   //Calibrate JoyStick
-  JOY_X_0 = digitalRead(JOY_X);
-  JOY_Y_0 = digitalRead(JOY_Y);
+  JOY_X_0 = analogRead(JOY_X);
+  JOY_Y_0 = analogRead(JOY_Y);
 }
 
 void loop() { 
