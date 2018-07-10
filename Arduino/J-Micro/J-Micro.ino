@@ -20,9 +20,42 @@
 #define MOUSE_SNST 0.25
 #define MOUSE_WH_SNST 0.002
 
+#define KEYB_REPORT_ID 0x02
+#define CONS_REPORT_ID 0x04
+
+#define KEY_1 0x1E
+#define KEY_2 0x1F
+#define KEY_3 0x20
+#define KEY_4 0x21
+#define KEY_5 0x22
+#define KEY_6 0x23
+#define KEY_7 0x24
+#define KEY_8 0x25
+#define KEY_9 0x26
+#define KEY_0 0x27
+
+#define KEY_ENTER 0x28
+#define KEY_ESC 0x29
+#define KEY_BACKSPACE 0x2A
+#define KEY_DELETE 0x4C
+
+#define KEY_RIGHT 0x4F
+#define KEY_LEFT 0x50
+#define KEY_DOWN 0x51
+#define KEY_UP 0x52
+
+#define KEY_AGAIN 0x79
+#define KEY_UNDO 0x7A
+#define KEY_CUT 0x7B
+#define KEY_COPY 0x7C
+#define KEY_PASTE 0x7D
+
+#define KEY_VOLUME_MUTE 0xE2
+#define KEY_VOLUME_UP 0xE9
+#define KEY_VOLUME_DOWN 0xEA
+
 #include<Mouse.h>
-//#include<JOY-Board.h>
-#include <HID.h>
+#include "HID.h"
 
 //Array Of Pins Giving Supply To Key Matrix
 uint8_t KEY_H_OUT[] = {KEY_H0,KEY_H1,KEY_H2,KEY_H3};
@@ -30,11 +63,8 @@ uint8_t KEY_H_OUT[] = {KEY_H0,KEY_H1,KEY_H2,KEY_H3};
 //Array Of Pins Reading State Of Key Matrix
 uint8_t KEY_V_IN[] = {KEY_V0,KEY_V1,KEY_V2,KEY_V3};
 
-//Array Of Key Lower Functionalities
-uint16_t KEY_MAP0[][4] = {{KEY_1, KEY_2, KEY_3, KEY_CUT}, {KEY_4, KEY_5, KEY_6, KEY_COPY}, {KEY_7, KEY_8, KEY_9, KEY_PASTE}, {KEY_UNDO, KEY_0, KEY_AGAIN, 0}};
-
-//Array Of Key Upper Functionalities
-uint16_t KEY_MAP1[][4] = {{KEY_BACKSPACE, KEY_UP, KEY_DELETE, 0}, {KEY_LEFT, KEY_ENTER, KEY_RIGHT, 0}, {0, KEY_DOWN, 0, 0}, {KEY_VOLUME_DOWN, KEY_VOLUME_MUTE, KEY_VOLUME_UP, 0}};
+//Array Of Key Functionalities
+uint8_t KEY_MAP[2][4][4] = {{{KEY_1, KEY_2, KEY_3, KEY_CUT}, {KEY_4, KEY_5, KEY_6, KEY_COPY}, {KEY_7, KEY_8, KEY_9, KEY_PASTE}, {KEY_UNDO, KEY_0, KEY_AGAIN, 0}}, {{KEY_BACKSPACE, KEY_UP, KEY_DELETE, 0}, {KEY_LEFT, KEY_ENTER, KEY_RIGHT, 0}, {0, KEY_DOWN, 0, 0}, {KEY_VOLUME_DOWN, KEY_VOLUME_MUTE, KEY_VOLUME_UP, 0}}};
 
 bool KEY_PRESSED_NOW = false;
 bool KEY_PRESSED_PREV = false;
@@ -65,7 +95,7 @@ struct {
   uint8_t modifierStat;
   uint8_t reservedByte;
   uint8_t keyCode;  
-}keybRprt;
+} keybRprt;
 
 static const uint8_t HID_reportDescriptor[] PROGMEM = {
   /* Consumer Control */
@@ -109,7 +139,6 @@ static const uint8_t HID_reportDescriptor[] PROGMEM = {
 };
 
 static HIDSubDescriptor node(HID_reportDescriptor, sizeof(HID_reportDescriptor));
-HID().AppendDescriptor(&node);
 
 void setup() {
   Serial.begin(9600);
@@ -141,9 +170,13 @@ void setup() {
   Mouse.begin();
   //Keyboard.begin();
 
+  HID().AppendDescriptor(&node);
+
   //Initialize By Sending A Blank Report
   consRprt = 0;
-  HID().SendReport(4,&mediaKey, sizeof(mediaKey));
+  HID().SendReport(CONS_REPORT_ID,&consRprt, sizeof(consRprt));
+  memset(&keybRprt,0,sizeof(keybRprt));
+  HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
 }
 
 void loop() { 
@@ -158,23 +191,35 @@ void loop() {
       if (!digitalRead(KEY_V_IN[j])) {
         KEY_PRESSED_NOW = true;
         if (!KEY_PRESSED_PREV) {
-          if (BUT_ST_PRESSED) {
-            Serial.println(KEY_MAP1[i][j]);
-            Keyboard.press(KEY_MAP1[i][j]);
+          uint8_t KEY_CODE = KEY_MAP[BUT_ST_PRESSED][i][j];
+          
+          //Digits, Enter, Backspace, Delete, Escape
+          if (KEY_CODE >= 0x1E && KEY_CODE <= 0x52) {
+            if (keybRprt.keyCode == 0x00) {
+              keybRprt.keyCode = KEY_CODE;
+              HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
+            }
           }
-          else {
-            Serial.println(KEY_MAP0[i][j]);
-            Keyboard.press(KEY_MAP0[i][j]);            
+
+          //Media Keys
+          else if (KEY_CODE >= 0xE2 && KEY_CODE <= 0xEA) {
+            if (consRprt == 0x00) {
+              consRprt = KEY_CODE;
+              HID().SendReport(CONS_REPORT_ID, &consRprt, sizeof(consRprt));
+            }
           }
         }
       }
     }
   }
   if (!KEY_PRESSED_NOW && KEY_PRESSED_PREV) {
-    //buf[2] = 0x00;
-    //Serial.write(buf,9);
-    //Consumer.releaseAll();
-    Keyboard.releaseAll();
+    //Send Blank Report To Release Keys
+    consRprt = 0;
+    HID().SendReport(CONS_REPORT_ID,&consRprt, sizeof(consRprt));
+    memset(&keybRprt,0,sizeof(keybRprt));
+    HID().SendReport(KEYB_REPORT_ID,&keybRprt, sizeof(keybRprt));
+    
+    //Keyboard.releaseAll();
   }
   KEY_PRESSED_PREV = KEY_PRESSED_NOW;
   KEY_PRESSED_NOW = false;
