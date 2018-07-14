@@ -308,10 +308,16 @@ void loop() {
   BUT_PY_PRESSED_NOW = !digitalRead(BUT_PRIM);
   if (BUT_PY_PRESSED_PREV != BUT_PY_PRESSED_NOW) {
     if (BUT_PY_PRESSED_NOW) {
+      mousRprt.xMove = 0;
+      mousRprt.yMove = 0;
+      mousRprt.whMove = 0;
       mousRprt.buttonsStat = mousRprt.buttonsStat | MOUSE_LEFT;
       HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
     }
     else {
+      mousRprt.xMove = 0;
+      mousRprt.yMove = 0;
+      mousRprt.whMove = 0;
       mousRprt.buttonsStat = mousRprt.buttonsStat & (~MOUSE_LEFT);
       HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
     }
@@ -321,10 +327,16 @@ void loop() {
   BUT_SY_PRESSED_NOW = !digitalRead(BUT_SECN);
   if (BUT_SY_PRESSED_PREV != BUT_SY_PRESSED_NOW) {
     if (BUT_SY_PRESSED_NOW) {
+      mousRprt.xMove = 0;
+      mousRprt.yMove = 0;
+      mousRprt.whMove = 0;
       mousRprt.buttonsStat = mousRprt.buttonsStat | MOUSE_RIGHT;
       HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
     }
     else {
+      mousRprt.xMove = 0;
+      mousRprt.yMove = 0;
+      mousRprt.whMove = 0;
       mousRprt.buttonsStat = mousRprt.buttonsStat & (~MOUSE_RIGHT);
       HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
     }
@@ -334,10 +346,16 @@ void loop() {
   BUT_SL_PRESSED_NOW = !digitalRead(BUT_SCRL);
   if (BUT_SL_PRESSED_PREV != BUT_SL_PRESSED_NOW) {
     if (BUT_SL_PRESSED_NOW) {
+      mousRprt.xMove = 0;
+      mousRprt.yMove = 0;
+      mousRprt.whMove = 0;
       mousRprt.buttonsStat = mousRprt.buttonsStat | MOUSE_MIDDLE;
       HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
     }
     else {
+      mousRprt.xMove = 0;
+      mousRprt.yMove = 0;
+      mousRprt.whMove = 0;
       mousRprt.buttonsStat = mousRprt.buttonsStat & (~MOUSE_MIDDLE);
       HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
     }
@@ -390,7 +408,9 @@ void loop() {
       mousRprt.xMove = MOUSE_X;
       mousRprt.yMove = MOUSE_Y;
       mousRprt.whMove = -MOUSE_WH;
-      Serial.println(MOUSE_WH);
+      Serial.print(MOUSE_X);
+      Serial.print(", ");
+      Serial.println(MOUSE_Y);
       HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
       JOY_RESPOND = millis();
     }
