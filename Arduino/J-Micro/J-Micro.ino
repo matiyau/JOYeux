@@ -1,24 +1,26 @@
-#define KEY_H0 6
-#define KEY_H1 7
-#define KEY_H2 8
-#define KEY_H3 9
+#define KEY_H0 9
+#define KEY_H1 8
+#define KEY_H2 7
+#define KEY_H3 6
 
-#define KEY_V0 10
-#define KEY_V1 11
-#define KEY_V2 12
-#define KEY_V3 13
+#define KEY_V0 5
+#define KEY_V1 4
+#define KEY_V2 3
+#define KEY_V3 2
 
-#define JOY_X A2
-#define JOY_Y A1
-#define JOY_SW A0
+#define JOY_X A3
+#define JOY_Y A2
+#define JOY_SW A1
 
-#define BUT_PRIM 2
-#define BUT_SECN 3
-#define BUT_SCRL 5
-#define BUT_SHFT 4
+#define STAT_LED A0
+
+#define BUT_PRIM 16
+#define BUT_SECN 10
+#define BUT_SCRL 14
+#define BUT_SHFT 15
 
 #define MOUSE_SNST 0.25
-#define MOUSE_WH_SNST 0.002
+#define MOUSE_WH_SNST 0.25
 
 #define MOUS_REPORT_ID 0x01
 #define KEYB_REPORT_ID 0x02
@@ -27,6 +29,17 @@
 #define MOUSE_LEFT 1
 #define MOUSE_RIGHT 2
 #define MOUSE_MIDDLE 4
+
+#define MOD_LCTRL 0b00000001
+#define MOD_LSHFT 0b00000010
+#define MOD_LALT 0b00000100
+#define MOD_LGUI 0b00001000
+
+#define KEY_A 0x04
+#define KEY_C 0x06
+#define KEY_S 0x16
+#define KEY_V 0x19
+#define KEY_X 0x1B
 
 #define KEY_1 0x1E
 #define KEY_2 0x1F
@@ -49,16 +62,24 @@
 #define KEY_DOWN 0x51
 #define KEY_UP 0x52
 
+#define KEY_DIV 0x54
+#define KEY_MUL 0x55
+#define KEY_SUB 0x56
+#define KEY_ADD 0x57
+
 #define KEY_AGAIN 0x79
 #define KEY_UNDO 0x7A
 #define KEY_CUT 0x7B
 #define KEY_COPY 0x7C
 #define KEY_PASTE 0x7D
 
+#define KEY_BROPN 0xB6
+#define KEY_BRCLS 0xB7
+
 #define KEY_VOLUME_MUTE 0xE2
 #define KEY_VOLUME_UP 0xE9
 #define KEY_VOLUME_DOWN 0xEA
-s
+
 #include "HID.h"
 
 //Array Of Pins Giving Supply To Key Matrix
@@ -68,7 +89,7 @@ uint8_t KEY_H_OUT[] = {KEY_H0,KEY_H1,KEY_H2,KEY_H3};
 uint8_t KEY_V_IN[] = {KEY_V0,KEY_V1,KEY_V2,KEY_V3};
 
 //Array Of Key Functionalities
-uint8_t KEY_MAP[2][4][4] = {{{KEY_1, KEY_2, KEY_3, KEY_CUT}, {KEY_4, KEY_5, KEY_6, KEY_COPY}, {KEY_7, KEY_8, KEY_9, KEY_PASTE}, {KEY_UNDO, KEY_0, KEY_AGAIN, 0}}, {{KEY_BACKSPACE, KEY_UP, KEY_DELETE, 0}, {KEY_LEFT, KEY_ENTER, KEY_RIGHT, 0}, {0, KEY_DOWN, 0, 0}, {KEY_VOLUME_DOWN, KEY_VOLUME_MUTE, KEY_VOLUME_UP, 0}}};
+uint8_t KEY_MAP[2][4][4] = {{{KEY_1, KEY_2, KEY_3, KEY_DIV}, {KEY_4, KEY_5, KEY_6, KEY_MUL}, {KEY_7, KEY_8, KEY_9, KEY_SUB}, {KEY_BROPN, KEY_0, KEY_BRCLS, KEY_ADD}}, {{KEY_BACKSPACE, KEY_UP, KEY_DELETE, KEY_X}, {KEY_LEFT, KEY_ENTER, KEY_RIGHT, KEY_C}, {KEY_ESC, KEY_DOWN, KEY_S, KEY_V}, {KEY_VOLUME_DOWN, KEY_VOLUME_MUTE, KEY_VOLUME_UP, KEY_A}}};
 
 bool KEY_PRESSED_NOW = false;
 bool KEY_PRESSED_PREV = false;
@@ -157,7 +178,7 @@ static const uint8_t HID_reportDescriptor[] PROGMEM = {
   0x95, 0x06,         //   REPORT_COUNT (1)
   0x75, 0x08,         //   REPORT_SIZE (8)
   0x15, 0x00,         //   LOGICAL_MINIMUM (0)
-  0x25, 0x82,         //   LOGICAL_MAXIMUM (128)
+  0x25, 0x82,         //   LOGICAL_MAXIMUM (132)
   0x05, 0x07,         //   USAGE_PAGE (Keyboard)
   0x19, 0x00,         //   USAGE_MINIMUM (Reserved (no event indicated))
   0x29, 0x82,         //   USAGE_MAXIMUM (Keyboard Locking Caps Lock)
@@ -208,6 +229,9 @@ void setup() {
   JOY_X_0 = analogRead(JOY_X);
   JOY_Y_0 = analogRead(JOY_Y);
 
+  //Set The Status Pun As Output
+  pinMode(STAT_LED, OUTPUT);
+
   //Append The HID Report Descriptor
   HID().AppendDescriptor(&node);
 
@@ -233,10 +257,28 @@ void loop() {
         KEY_PRESSED_NOW = true;
         if (!KEY_PRESSED_PREV) {
           uint8_t KEY_CODE = KEY_MAP[BUT_ST_PRESSED][i][j];
+
+          //Control Key Combinations
+          if (KEY_CODE >= 0x04 && KEY_CODE <= 0x1B) {
+            if (keybRprt.keyCode == 0x00) {
+              keybRprt.modifierStat = keybRprt.modifierStat | MOD_LCTRL;
+              keybRprt.keyCode = KEY_CODE;
+              HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
+            }
+          }
           
           //Digits, Enter, Backspace, Delete, Escape
-          if (KEY_CODE >= 0x1E && KEY_CODE <= 0x52) {
+          else if (KEY_CODE >= 0x1E && KEY_CODE <= 0x7D) {
             if (keybRprt.keyCode == 0x00) {
+              keybRprt.keyCode = KEY_CODE;
+              HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
+            }
+          }
+
+          //Open And Close Brackets
+          else if (KEY_CODE == KEY_BROPN || KEY_CODE == KEY_BRCLS) {
+            if (keybRprt.keyCode == 0x00) {
+              keybRprt.modifierStat = keybRprt.modifierStat | MOD_LSHFT;
               keybRprt.keyCode = KEY_CODE;
               HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
             }
@@ -306,14 +348,16 @@ void loop() {
   if (!JOY_PRESSED_PREV) {
     if (JOY_PRESSED_NOW) {
       JOY_SCR = !JOY_SCR;
+      digitalWrite(STAT_LED, JOY_SCR);
     }
   }
   JOY_PRESSED_PREV = JOY_PRESSED_NOW;
 
   if (JOY_SCR) {
+    
     MOUSE_X = 0;
     MOUSE_Y = 0;
-    MOUSE_WH = MOUSE_WH_SNST * analogRead(JOY_Y)-512;
+    MOUSE_WH = analogRead(JOY_Y)-JOY_Y_0;
   }
   else {
     MOUSE_X = analogRead(JOY_X)-JOY_X_0;
@@ -345,7 +389,8 @@ void loop() {
 
       mousRprt.xMove = MOUSE_X;
       mousRprt.yMove = MOUSE_Y;
-      mousRprt.whMove = MOUSE_WH;
+      mousRprt.whMove = -MOUSE_WH;
+      Serial.println(MOUSE_WH);
       HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
       JOY_RESPOND = millis();
     }
