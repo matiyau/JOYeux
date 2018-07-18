@@ -115,17 +115,18 @@ bool BUT_ST_PRESSED = false;
 
 int16_t MOUSE_X = 0;
 int16_t MOUSE_Y = 0;
-int16_t MOUSE_WH = 0;
+int16_t MOUSE_WH_X = 0;
+int16_t MOUSE_WH_Y = 0;
 
 int16_t JOY_X_0 = 512;
 int16_t JOY_Y_0 = 512;
 unsigned long JOY_RESPOND = 0;
 
 struct {
-  uint8_t buttonsStat;
-  uint8_t xMove;
-  uint8_t yMove;
-  uint8_t whMove; 
+  uint8_t buttonsStat;        // Stores Mouse Button Status
+  uint8_t xMove;              // Stores X-Axis Displacement
+  uint8_t yMove;              // Stores Y-Axis Displacement
+  uint8_t whMove;             // Stores Scroll Displacement
 } mousRprt;
 
 struct {
@@ -438,7 +439,8 @@ void loop() {
   if (JOY_SCR) {
     MOUSE_X = 0;
     MOUSE_Y = 0;
-    MOUSE_WH = analogRead(JOY_Y)-JOY_Y_0;
+    MOUSE_WH_X = analogRead(JOY_X)-JOY_X_0;
+    MOUSE_WH_Y = analogRead(JOY_Y)-JOY_Y_0;
   }
   else {
     MOUSE_X = analogRead(JOY_X)-JOY_X_0;
@@ -452,9 +454,10 @@ void loop() {
     Serial.print(", ");
     Serial.println(MOUSE_Y);
     */
-    MOUSE_WH = 0;    
+    MOUSE_WH_X = 0;
+    MOUSE_WH_Y = 0;    
   }
-  if (!(MOUSE_X<2 && MOUSE_X>-2 && MOUSE_Y<2 && MOUSE_Y>-2 && MOUSE_WH<2 && MOUSE_WH>-2)) {
+  if (!(MOUSE_X<2 && MOUSE_X>-2 && MOUSE_Y<2 && MOUSE_Y>-2 && MOUSE_WH_X<2 && MOUSE_WH_X>-2 && MOUSE_WH_Y<2 && MOUSE_WH_Y>-2)) {
     if (millis() - JOY_RESPOND > 100) {
       if (MOUSE_X > 0) {
         MOUSE_X = constrain(MOUSE_SNST * MOUSE_X, 1, 120);
@@ -470,18 +473,40 @@ void loop() {
         MOUSE_Y = constrain(MOUSE_SNST * MOUSE_Y, -120, -1);
       }
 
-      if (MOUSE_WH > 0) {
-        MOUSE_WH = constrain(MOUSE_WH_SNST * MOUSE_WH, 1, 120);
+      if (MOUSE_WH_X > 0) {
+        MOUSE_WH_X = constrain(MOUSE_WH_SNST * MOUSE_WH_X, 1, 120);
       }
-      else if (MOUSE_WH < 0){
-        MOUSE_WH = constrain(MOUSE_WH_SNST * MOUSE_WH, -120, -1);
+      else if (MOUSE_WH_X < 0){
+        MOUSE_WH_X = constrain(MOUSE_WH_SNST * MOUSE_WH_X, -120, -1);
+      }
+
+      if (MOUSE_WH_Y > 0) {
+        MOUSE_WH_Y = constrain(MOUSE_WH_SNST * MOUSE_WH_Y, 1, 120);
+      }
+      else if (MOUSE_WH_Y < 0){
+        MOUSE_WH_Y = constrain(MOUSE_WH_SNST * MOUSE_WH_Y, -120, -1);
       }
 
       mousRprt.xMove = MOUSE_X;
       mousRprt.yMove = MOUSE_Y;
-      mousRprt.whMove = -MOUSE_WH;
+      mousRprt.whMove = -MOUSE_WH_Y;      
+      keybRprt.modifierStat = keybRprt.modifierStat & (~MOD_LSHFT);
+      HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
+      HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
+      delay(50);
+      mousRprt.xMove = 0;
+      mousRprt.yMove = 0;
+      mousRprt.whMove = -MOUSE_WH_X;
+      keybRprt.modifierStat = keybRprt.modifierStat | MOD_LSHFT;
+      HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
       HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
       JOY_RESPOND = millis();
+    }
+  }
+  else {
+    if ((keybRprt.modifierStat & MOD_LSHFT) == MOD_LSHFT) {
+      keybRprt.modifierStat = keybRprt.modifierStat & (~MOD_LSHFT);
+      HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
     }
   }
 }
