@@ -25,6 +25,7 @@
 #define MOUS_REPORT_ID 0x01
 #define KEYB_REPORT_ID 0x02
 #define CONS_REPORT_ID 0x04
+#define SYST_REPORT_ID 0x05
 
 #define MOUSE_LEFT 1
 #define MOUSE_RIGHT 2
@@ -37,6 +38,7 @@
 
 #define KEY_A 0x04
 #define KEY_C 0x06
+#define KEY_L 0x0F
 #define KEY_S 0x16
 #define KEY_V 0x19
 #define KEY_X 0x1B
@@ -80,6 +82,11 @@
 #define KEY_VOLUME_UP 0xE9
 #define KEY_VOLUME_DOWN 0xEA
 
+#define SYS_PDOWN 1<<0
+#define SYS_SLEEP 1<<1
+//#define SYS_CLRBT 1<<14
+//#define SYS_WRRBT 1<<15
+
 #include "HID.h"
 
 //Array Of Pins Giving Supply To Key Matrix
@@ -122,12 +129,15 @@ struct {
 } mousRprt;
 
 struct {
-  uint8_t modifierStat;
-  uint8_t reservedByte;
-  uint8_t keyCode;  
+  uint8_t modifierStat;       //Stores Status Of Mofifier Keys : Shift, Alt. Ctrl, GUI And Duplicates Of These Keys
+  uint8_t reservedByte;       //Reserved Unused Byte
+  uint8_t keyCode;            //Stores KeyCode Of The Key Pressed
+  uint8_t windowsUseless[5];  //Required Since Windows Only Acknowledges The 8-Byte Format
 } keybRprt;
 
 uint16_t consRprt;
+
+uint8_t systRprt;
 
 static const uint8_t HID_reportDescriptor[] PROGMEM = {
   /* Mouse */
@@ -160,13 +170,13 @@ static const uint8_t HID_reportDescriptor[] PROGMEM = {
   0xc0,               //   END_COLLECTION
   0xc0,               // END_COLLECTION
   /* Keyboard Control */
-  0x05, 0x01,         // USAGE_PAGE (Generic Desktop)  // 47
+  0x05, 0x01,         // USAGE_PAGE (Generic Desktop)
   0x09, 0x06,         // USAGE (Keyboard)
-  0xa1, 0x01,         // COLLECTION (Application)
+  0xa1, 0x01,         // COLLECTION (Application)  
   0x85, 0x02,         //   REPORT_ID (2)
   0x05, 0x07,         //   USAGE_PAGE (Keyboard)
-  0x19, 0xe0,         //   USAGE_MINIMUM (Keyboard LeftControl)
-  0x29, 0xe7,         //   USAGE_MAXIMUM (Keyboard Right GUI)
+  0x19, 0xE0,         //   USAGE_MINIMUM (Keyboard LeftControl)
+  0x29, 0xE7,         //   USAGE_MAXIMUM (Keyboard Right GUI)
   0x15, 0x00,         //   LOGICAL_MINIMUM (0)
   0x25, 0x01,         //   LOGICAL_MAXIMUM (1)
   0x75, 0x01,         //   REPORT_SIZE (1)
@@ -175,28 +185,41 @@ static const uint8_t HID_reportDescriptor[] PROGMEM = {
   0x95, 0x01,         //   REPORT_COUNT (1)
   0x75, 0x08,         //   REPORT_SIZE (8)
   0x81, 0x03,         //   INPUT (Cnst,Var,Abs)
-  0x95, 0x06,         //   REPORT_COUNT (1)
+  0x95, 0x06,         //   REPORT_COUNT (6)
   0x75, 0x08,         //   REPORT_SIZE (8)
   0x15, 0x00,         //   LOGICAL_MINIMUM (0)
-  0x25, 0x82,         //   LOGICAL_MAXIMUM (132)
+  0x25, 0xB7,         //   LOGICAL_MAXIMUM (183)
   0x05, 0x07,         //   USAGE_PAGE (Keyboard)
   0x19, 0x00,         //   USAGE_MINIMUM (Reserved (no event indicated))
-  0x29, 0x82,         //   USAGE_MAXIMUM (Keyboard Locking Caps Lock)
+  0x29, 0xB7,         //   USAGE_MAXIMUM (Keypad Open Bracket)
   0x81, 0x00,         //   INPUT (Data,Ary,Abs)
-  0xc0,               // END_COLLECTION 
+  0xC0,               // END_COLLECTION 
   /* Consumer Control */
   0x05, 0x0C,         // USAGE_PAGE (Consumer Device)
   0x09, 0x01,         // USAGE (Consumer Control)
   0xA1, 0x01,         // COLLECTION (Application)
   0x85, 0x04,         //    REPORT_ID (4)
-  0x15, 0x00,         //    LOGICAL_MINIMUM (3FF)
+  0x15, 0x00,         //    LOGICAL_MINIMUM (0)
   0x26, 0xFF, 0x03,   //    LOGICAL_MAXIMUM (3FF)
   0x19, 0x00,         //    USAGE_MINIMUM (0)
   0x2A, 0xFF, 0x03,   //    USAGE_MAXIMUM (0x3FF)
   0x95, 0x01,         //    REPORT_COUNT (1)
   0x75, 0x10,         //    REPORT_SIZE (16)
   0x81, 0x00,         //    INPUT (Data,Ary,Abs)
-  0xC0,               //END_COLLECTION 
+  0xC0,               //END_COLLECTION
+  /* System Control
+  0x05, 0x01,         // USAGE_PAGE (Generic Desktop)
+  0x09, 0x80,         // USAGE (System Control)
+  0xA1, 0x01,         // COLLECTION (Application)
+  0x85, 0x05,         //    REPORT_ID (5)
+  0x15, 0x00,         //    LOGICAL_MINIMUM (0)
+  0x26, 0x01,         //    LOGICAL_MAXIMUM (1)
+  0x19, 0x81,         //    USAGE_MINIMUM (System Power Down)
+  0x2A, 0x88,         //    USAGE_MAXIMUM ()
+  0x95, 0x08,         //    REPORT_COUNT (8)
+  0x75, 0x01,         //    REPORT_SIZE (1)
+  0x81, 0x00,         //    INPUT (Data,Ary,Abs)
+  0xC0,               //END_COLLECTION */
 };
 
 //Create A Node For The HID Descriptor
@@ -242,10 +265,17 @@ void setup() {
   HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
   consRprt = 0;
   HID().SendReport(CONS_REPORT_ID,&consRprt, sizeof(consRprt));
+  //systRprt = 0;
+  //HID().SendReport(SYST_REPORT_ID,&systRprt, sizeof(systRprt));
 }
 
 void loop() { 
   BUT_ST_PRESSED = !digitalRead(BUT_SHFT);
+
+  //Device Disable Sequence
+  if (BUT_ST_PRESSED && (!digitalRead(JOY_SW))) {
+    return;
+  }
    
   for (int i = 0; i<4; i++) {
     for (int j = 0; j<4; j++) {
@@ -308,11 +338,23 @@ void loop() {
   BUT_PY_PRESSED_NOW = !digitalRead(BUT_PRIM);
   if (BUT_PY_PRESSED_PREV != BUT_PY_PRESSED_NOW) {
     if (BUT_PY_PRESSED_NOW) {
-      mousRprt.xMove = 0;
-      mousRprt.yMove = 0;
-      mousRprt.whMove = 0;
-      mousRprt.buttonsStat = mousRprt.buttonsStat | MOUSE_LEFT;
-      HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
+      if (BUT_ST_PRESSED) {
+        /*
+        systRprt = SYS_PDOWN;        
+        Serial.println(systRprt);
+        HID().SendReport(SYST_REPORT_ID, &systRprt, sizeof(systRprt));
+        delay(100);
+        systRprt = 0x00;
+        HID().SendReport(SYST_REPORT_ID, &systRprt, sizeof(systRprt));
+        */
+      }
+      else {
+        mousRprt.xMove = 0;
+        mousRprt.yMove = 0;
+        mousRprt.whMove = 0;
+        mousRprt.buttonsStat = mousRprt.buttonsStat | MOUSE_LEFT;
+        HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
+      }
     }
     else {
       mousRprt.xMove = 0;
@@ -327,11 +369,23 @@ void loop() {
   BUT_SY_PRESSED_NOW = !digitalRead(BUT_SECN);
   if (BUT_SY_PRESSED_PREV != BUT_SY_PRESSED_NOW) {
     if (BUT_SY_PRESSED_NOW) {
-      mousRprt.xMove = 0;
-      mousRprt.yMove = 0;
-      mousRprt.whMove = 0;
-      mousRprt.buttonsStat = mousRprt.buttonsStat | MOUSE_RIGHT;
-      HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
+      if (BUT_ST_PRESSED) {
+        /*
+        systRprt = SYS_SLEEP;
+        Serial.println(systRprt);
+        HID().SendReport(SYST_REPORT_ID, &systRprt, sizeof(systRprt));
+        //delay(100);
+        //systRprt = 0x00;
+        //HID().SendReport(SYST_REPORT_ID, &systRprt, sizeof(systRprt));
+        */
+      }
+      else {
+        mousRprt.xMove = 0;
+        mousRprt.yMove = 0;
+        mousRprt.whMove = 0;
+        mousRprt.buttonsStat = mousRprt.buttonsStat | MOUSE_RIGHT;
+        HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
+      }
     }
     else {
       mousRprt.xMove = 0;
@@ -346,11 +400,21 @@ void loop() {
   BUT_SL_PRESSED_NOW = !digitalRead(BUT_SCRL);
   if (BUT_SL_PRESSED_PREV != BUT_SL_PRESSED_NOW) {
     if (BUT_SL_PRESSED_NOW) {
-      mousRprt.xMove = 0;
-      mousRprt.yMove = 0;
-      mousRprt.whMove = 0;
-      mousRprt.buttonsStat = mousRprt.buttonsStat | MOUSE_MIDDLE;
-      HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
+      if (BUT_ST_PRESSED) {
+        keybRprt.modifierStat = keybRprt.modifierStat | MOD_LGUI;
+        keybRprt.keyCode = KEY_L;
+        HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
+        delay(100);
+        memset(&keybRprt,0,sizeof(keybRprt));
+        HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
+      }
+      else {
+        mousRprt.xMove = 0;
+        mousRprt.yMove = 0;
+        mousRprt.whMove = 0;
+        mousRprt.buttonsStat = mousRprt.buttonsStat | MOUSE_MIDDLE;
+        HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
+      }
     }
     else {
       mousRprt.xMove = 0;
@@ -372,7 +436,6 @@ void loop() {
   JOY_PRESSED_PREV = JOY_PRESSED_NOW;
 
   if (JOY_SCR) {
-    
     MOUSE_X = 0;
     MOUSE_Y = 0;
     MOUSE_WH = analogRead(JOY_Y)-JOY_Y_0;
@@ -380,6 +443,15 @@ void loop() {
   else {
     MOUSE_X = analogRead(JOY_X)-JOY_X_0;
     MOUSE_Y = analogRead(JOY_Y)-JOY_Y_0;
+    /*
+    Serial.print(JOY_X_0);
+    Serial.print(", ");
+    Serial.print(MOUSE_X);
+    Serial.print(", ");
+    Serial.print(JOY_Y_0);
+    Serial.print(", ");
+    Serial.println(MOUSE_Y);
+    */
     MOUSE_WH = 0;    
   }
   if (!(MOUSE_X<2 && MOUSE_X>-2 && MOUSE_Y<2 && MOUSE_Y>-2 && MOUSE_WH<2 && MOUSE_WH>-2)) {
@@ -408,9 +480,6 @@ void loop() {
       mousRprt.xMove = MOUSE_X;
       mousRprt.yMove = MOUSE_Y;
       mousRprt.whMove = -MOUSE_WH;
-      Serial.print(MOUSE_X);
-      Serial.print(", ");
-      Serial.println(MOUSE_Y);
       HID().SendReport(MOUS_REPORT_ID, &mousRprt, sizeof(mousRprt));
       JOY_RESPOND = millis();
     }
