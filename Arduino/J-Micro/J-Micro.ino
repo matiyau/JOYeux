@@ -319,9 +319,12 @@ void loop() {
   if (BUT_PY_PRESSED_PREV != BUT_PY_PRESSED_NOW) {
     if (BUT_PY_PRESSED_NOW) {
       if (BUT_ST_PRESSED) {
-        /*
-         
-        */
+        keybRprt.modifierStat = keybRprt.modifierStat | MOD_LALT;
+        keybRprt.keyCode = KEY_LEFT;
+        HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
+        delay(1000);
+        memset(&keybRprt,0,sizeof(keybRprt));
+        HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
       }
       else {
         mousRprt.xMove = 0;
@@ -345,9 +348,12 @@ void loop() {
   if (BUT_SY_PRESSED_PREV != BUT_SY_PRESSED_NOW) {
     if (BUT_SY_PRESSED_NOW) {
       if (BUT_ST_PRESSED) {
-        /*
-        
-        */
+        keybRprt.modifierStat = keybRprt.modifierStat | MOD_LALT;
+        keybRprt.keyCode = KEY_RIGHT;
+        HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
+        delay(1000);
+        memset(&keybRprt,0,sizeof(keybRprt));
+        HID().SendReport(KEYB_REPORT_ID, &keybRprt, sizeof(keybRprt));
       }
       else {
         mousRprt.xMove = 0;
@@ -410,6 +416,15 @@ void loop() {
     MOUSE_Y = 0;
     MOUSE_WH_X = analogRead(JOY_X)-JOY_X_0;
     MOUSE_WH_Y = analogRead(JOY_Y)-JOY_Y_0;
+    
+    Serial.print(JOY_X_0);
+    Serial.print(", ");
+    Serial.print(MOUSE_WH_X);
+    Serial.print(", ");
+    Serial.print(JOY_Y_0);
+    Serial.print(", ");
+    Serial.println(MOUSE_WH_Y);
+    
   }
   else {
     MOUSE_X = analogRead(JOY_X)-JOY_X_0;
