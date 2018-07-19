@@ -25,7 +25,6 @@
 #define MOUS_REPORT_ID 0x01
 #define KEYB_REPORT_ID 0x02
 #define CONS_REPORT_ID 0x04
-#define SYST_REPORT_ID 0x05
 
 #define MOUSE_LEFT 1
 #define MOUSE_RIGHT 2
@@ -82,11 +81,6 @@
 #define KEY_VOLUME_UP 0xE9
 #define KEY_VOLUME_DOWN 0xEA
 
-#define SYS_PDOWN 1<<0
-#define SYS_SLEEP 1<<1
-//#define SYS_CLRBT 1<<14
-//#define SYS_WRRBT 1<<15
-
 #include "HID.h"
 
 //Array Of Pins Giving Supply To Key Matrix
@@ -137,8 +131,6 @@ struct {
 } keybRprt;
 
 uint16_t consRprt;
-
-uint8_t systRprt;
 
 static const uint8_t HID_reportDescriptor[] PROGMEM = {
   /* Mouse */
@@ -208,19 +200,6 @@ static const uint8_t HID_reportDescriptor[] PROGMEM = {
   0x75, 0x10,         //    REPORT_SIZE (16)
   0x81, 0x00,         //    INPUT (Data,Ary,Abs)
   0xC0,               //END_COLLECTION
-  /* System Control
-  0x05, 0x01,         // USAGE_PAGE (Generic Desktop)
-  0x09, 0x80,         // USAGE (System Control)
-  0xA1, 0x01,         // COLLECTION (Application)
-  0x85, 0x05,         //    REPORT_ID (5)
-  0x15, 0x00,         //    LOGICAL_MINIMUM (0)
-  0x26, 0x01,         //    LOGICAL_MAXIMUM (1)
-  0x19, 0x81,         //    USAGE_MINIMUM (System Power Down)
-  0x2A, 0x88,         //    USAGE_MAXIMUM ()
-  0x95, 0x08,         //    REPORT_COUNT (8)
-  0x75, 0x01,         //    REPORT_SIZE (1)
-  0x81, 0x00,         //    INPUT (Data,Ary,Abs)
-  0xC0,               //END_COLLECTION */
 };
 
 //Create A Node For The HID Descriptor
@@ -341,12 +320,7 @@ void loop() {
     if (BUT_PY_PRESSED_NOW) {
       if (BUT_ST_PRESSED) {
         /*
-        systRprt = SYS_PDOWN;        
-        Serial.println(systRprt);
-        HID().SendReport(SYST_REPORT_ID, &systRprt, sizeof(systRprt));
-        delay(100);
-        systRprt = 0x00;
-        HID().SendReport(SYST_REPORT_ID, &systRprt, sizeof(systRprt));
+         
         */
       }
       else {
@@ -372,12 +346,7 @@ void loop() {
     if (BUT_SY_PRESSED_NOW) {
       if (BUT_ST_PRESSED) {
         /*
-        systRprt = SYS_SLEEP;
-        Serial.println(systRprt);
-        HID().SendReport(SYST_REPORT_ID, &systRprt, sizeof(systRprt));
-        //delay(100);
-        //systRprt = 0x00;
-        //HID().SendReport(SYST_REPORT_ID, &systRprt, sizeof(systRprt));
+        
         */
       }
       else {
